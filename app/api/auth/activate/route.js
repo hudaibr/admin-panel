@@ -1,4 +1,4 @@
-import { cleanString, isUuid, jsonError, requireUserSession } from '@/lib/desktopAuth'
+import { cleanString, jsonError, requireUserSession } from '@/lib/desktopAuth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export const dynamic = 'force-dynamic'
@@ -7,17 +7,9 @@ export async function POST(req) {
   const auth = await requireUserSession(req)
   if (auth.error) return auth.error
 
+  const userId = auth.user.id
   const body = await req.json().catch(() => ({}))
-  const userId = cleanString(body.user_id)
   const activationCode = cleanString(body.activation_code)
-
-  if (!isUuid(userId)) {
-    return jsonError('Valid user_id is required')
-  }
-
-  if (auth.user.id !== userId) {
-    return jsonError('Session does not match user_id', 403)
-  }
 
   if (!activationCode) {
     return jsonError('Activation code is required')
