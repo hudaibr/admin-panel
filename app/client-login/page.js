@@ -31,20 +31,6 @@ function ClientLoginForm() {
       return
     }
 
-    // Check if user is active (skipping the admin role check)
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_active')
-      .eq('id', data.user.id)
-      .single()
-
-    if (profileError || !profile || profile.is_active === false) {
-      await supabase.auth.signOut()
-      setError('Your account is inactive. Please contact support.')
-      setLoading(false)
-      return
-    }
-
     if (redirectUri) {
       const { data: sessionData } = await supabase.auth.getSession()
       const token = sessionData.session?.access_token

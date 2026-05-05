@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
+import { supabase } from '@/lib/supabaseClient'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -61,8 +62,15 @@ function RegisterForm() {
         throw new Error(result.error || 'Registration failed')
       }
 
-      if (redirectUri) {
-        window.location.href = `${redirectUri}?status=registered&user_id=${result.user_id}`
+      // Sign in automatically after registration
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password
+      })
+
+      if (redirectUri && loginData?.session) {
+        const token = loginData.session.access_token
+        window.location.href = `${redirectUri}?token=${token}`
         return
       }
 
