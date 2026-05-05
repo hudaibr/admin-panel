@@ -1,11 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function Register() {
+function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectUri = searchParams.get('redirect')
+
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -56,6 +59,11 @@ export default function Register() {
 
       if (!response.ok) {
         throw new Error(result.error || 'Registration failed')
+      }
+
+      if (redirectUri) {
+        window.location.href = `${redirectUri}?status=registered&user_id=${result.user_id}`
+        return
       }
 
       setSuccess(true)
@@ -196,5 +204,13 @@ export default function Register() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function Register() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#f7f7f8] flex items-center justify-center">Loading...</div>}>
+      <RegisterForm />
+    </Suspense>
   )
 }
