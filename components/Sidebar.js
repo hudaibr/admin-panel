@@ -6,9 +6,9 @@ import { usePathname } from 'next/navigation'
 const links = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/users', label: 'Users' },
-  { href: '/admin-activation', label: 'Activation Codes' },
+  { href: '/activation', label: 'Activation Codes' },
   { href: '/settings', label: 'Settings' },
-  ],
+],
 
 
 export default function Sidebar() {
