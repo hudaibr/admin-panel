@@ -8,7 +8,7 @@ const links = [
   { href: '/users', label: 'Users' },
   { href: '/activation', label: 'Activation Codes' },
   { href: '/settings', label: 'Settings' },
-],
+]
 
 
 export default function Sidebar() {
