@@ -88,10 +88,10 @@ function RegisterForm() {
             </div>
             <h1 className="text-2xl font-bold mb-2">Registration Successful</h1>
             <p className="text-[#667085] mb-8">
-              Your account has been created. However, it is currently inactive and requires admin approval before you can sign in to the panel.
+              Your account has been created. However, it is currently inactive and requires admin approval before you can sign in.
             </p>
             <Link 
-              href="/login"
+              href="/client-login"
               className="inline-block w-full rounded-md bg-[#0f766e] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#115e59]"
             >
               Back to Login
@@ -107,7 +107,7 @@ function RegisterForm() {
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center">
         <form onSubmit={handleRegister} className="w-full rounded-lg border border-[#d8dee6] bg-white p-8 shadow-sm">
           <div className="mb-8">
-            <p className="text-sm font-semibold uppercase tracking-wide text-[#0f766e]">Admin Panel</p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-[#0f766e]">Client Portal</p>
             <h1 className="mt-2 text-3xl font-bold">Create account</h1>
             <p className="mt-2 text-sm text-[#667085]">Fill in your details to register.</p>
           </div>
@@ -197,7 +197,7 @@ function RegisterForm() {
 
           <p className="mt-6 text-center text-sm text-[#667085]">
             Already have an account?{' '}
-            <Link href="/login" className="font-semibold text-[#0f766e] hover:underline">
+            <Link href="/client-login" className="font-semibold text-[#0f766e] hover:underline">
               Sign in
             </Link>
           </p>

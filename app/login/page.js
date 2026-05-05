@@ -1,15 +1,12 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-function LoginForm() {
+export default function Login() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirectUri = searchParams.get('redirect')
-
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -44,14 +41,8 @@ function LoginForm() {
       return
     }
 
-    if (redirectUri) {
-      const { data: sessionData } = await supabase.auth.getSession()
-      const token = sessionData.session?.access_token
-      window.location.href = `${redirectUri}?token=${token}`
-    } else {
-      router.push('/dashboard')
-      router.refresh()
-    }
+    router.push('/dashboard')
+    router.refresh()
   }
 
   return (
@@ -101,21 +92,13 @@ function LoginForm() {
           </button>
 
           <p className="mt-6 text-center text-sm text-[#667085]">
-            Don't have an account?{' '}
-            <Link href="/register" className="font-semibold text-[#0f766e] hover:underline">
+            Need a client account?{' '}
+            <Link href="/client-register" className="font-semibold text-[#0f766e] hover:underline">
               Register
             </Link>
           </p>
         </form>
       </div>
     </div>
-  )
-}
-
-export default function Login() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-[#f7f7f8] flex items-center justify-center">Loading...</div>}>
-      <LoginForm />
-    </Suspense>
   )
 }
