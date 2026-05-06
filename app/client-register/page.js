@@ -18,7 +18,6 @@ function RegisterForm() {
     confirmPassword: ''
   })
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
@@ -62,47 +61,13 @@ function RegisterForm() {
         throw new Error(result.error || 'Registration failed')
       }
 
-      // ✅ FIX: No more automatic sign-in with password.
-      // Redirect to login page to use Magic Link/PKCE flow.
-      if (redirectUri) {
-        setSuccess(true)
-        return
-      }
-
-      setSuccess(true)
-      setLoading(false)
+      // Redirect directly to activation page
+      const activationUrl = `/client-activation${redirectUri ? `?redirect=${encodeURIComponent(redirectUri)}` : ''}`
+      router.push(activationUrl)
     } catch (err) {
       setError(err.message)
       setLoading(false)
     }
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-[#f7f7f8] px-4 py-10 text-[#1f2933]">
-        <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center">
-          <div className="w-full rounded-lg border border-[#d8dee6] bg-white p-8 shadow-sm text-center">
-            <div className="mb-6 flex justify-center">
-              <div className="rounded-full bg-[#ecfdf5] p-3">
-                <svg className="h-8 w-8 text-[#059669]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-            <h1 className="text-2xl font-bold mb-2">Registration Successful</h1>
-            <p className="text-[#667085] mb-8">
-              Your account has been created. Please enter your activation code to continue.
-            </p>
-            <Link 
-              href="/client-login"
-              className="inline-block w-full rounded-md bg-[#0f766e] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#115e59]"
-            >
-              Back to Login
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
