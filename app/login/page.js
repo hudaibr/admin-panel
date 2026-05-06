@@ -6,20 +6,23 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function Login() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleLogin = async (event) => {
     event.preventDefault()
     setError('')
+    setMessage('')
     setLoading(true)
 
-    const { data, error: loginError } = await supabase.auth.signInWithPassword({
+    const { error: loginError } = await supabase.auth.signInWithOtp({
       email,
-      password
+      options: {
+        // 🔥 PKCE FLOW: The callback route will handle the code exchange
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      }
     })
 
     if (loginError) {
@@ -28,21 +31,8 @@ export default function Login() {
       return
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role,is_active')
-      .eq('id', data.user.id)
-      .single()
-
-    if (profileError || !profile || profile.role !== 'admin' || profile.is_active === false) {
-      await supabase.auth.signOut()
-      setError('Only active admin users can access this panel.')
-      setLoading(false)
-      return
-    }
-
-    router.push('/dashboard')
-    router.refresh()
+    setMessage('Check your email for the login link!')
+    setLoading(false)
   }
 
   return (
@@ -52,34 +42,29 @@ export default function Login() {
           <div className="mb-8">
             <p className="text-sm font-semibold uppercase tracking-wide text-[#0f766e]">Admin Panel</p>
             <h1 className="mt-2 text-3xl font-bold">Sign in</h1>
-            <p className="mt-2 text-sm text-[#667085]">Use an active admin account to continue.</p>
+            <p className="mt-2 text-sm text-[#667085]">Sign in via secure Magic Link.</p>
           </div>
 
-          {error ? (
+          {error && (
             <div className="mb-4 rounded-md border border-[#f2b8b5] bg-[#fff4f2] px-4 py-3 text-sm text-[#b42318]">
               {error}
             </div>
-          ) : null}
+          )}
+
+          {message && (
+            <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+              {message}
+            </div>
+          )}
 
           <label className="mb-2 block text-sm font-medium" htmlFor="email">Email</label>
           <input
             id="email"
-            className="mb-4 w-full rounded-md border border-[#cfd6df] px-3 py-2 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#99f6e4]"
+            className="mb-6 w-full rounded-md border border-[#cfd6df] px-3 py-2 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#99f6e4]"
             type="email"
             autoComplete="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-
-          <label className="mb-2 block text-sm font-medium" htmlFor="password">Password</label>
-          <input
-            id="password"
-            className="mb-6 w-full rounded-md border border-[#cfd6df] px-3 py-2 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#99f6e4]"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
             required
           />
 
@@ -88,7 +73,7 @@ export default function Login() {
             type="submit"
             disabled={loading}
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? 'Sending...' : 'Send Magic Link'}
           </button>
 
           <p className="mt-6 text-center text-sm text-[#667085]">
