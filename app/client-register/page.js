@@ -68,9 +68,12 @@ function RegisterForm() {
         password: formData.password
       })
 
+      if (loginError) throw new Error(loginError.message)
+
+      // ✅ FIX: Always redirect to activation page after registration.
+      // Never send token directly to desktop — new accounts are always inactive.
       if (redirectUri && loginData?.session) {
-        const token = loginData.session.access_token
-        window.location.href = `${redirectUri}?token=${token}`
+        window.location.href = `/client-activation?redirect=${encodeURIComponent(redirectUri)}`
         return
       }
 
@@ -96,7 +99,7 @@ function RegisterForm() {
             </div>
             <h1 className="text-2xl font-bold mb-2">Registration Successful</h1>
             <p className="text-[#667085] mb-8">
-              Your account has been created. However, it is currently inactive and requires admin approval before you can sign in.
+              Your account has been created. Please enter your activation code to continue.
             </p>
             <Link 
               href="/client-login"
@@ -222,3 +225,4 @@ export default function Register() {
     </Suspense>
   )
 }
+

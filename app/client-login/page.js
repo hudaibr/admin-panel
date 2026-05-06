@@ -20,23 +20,48 @@ function ClientLoginForm() {
     setError('')
     setLoading(true)
 
-    const { data, error: loginError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
+    try {
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
 
-    if (loginError) {
-      setError(loginError.message)
+      if (loginError) {
+        setError(loginError.message)
+        setLoading(false)
+        return
+      }
+
+      const token = data.session?.access_token
+      const userId = data.user?.id
+
+      // ✅ FIX: Check is_active from profiles before redirecting to desktop
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_active')
+        .eq('id', userId)
+        .single()
+
+      if (profileError) {
+        setError('Could not verify account status. Please try again.')
+        setLoading(false)
+        return
+      }
+
+      if (redirectUri) {
+        if (profile?.is_active) {
+          // Active user → send directly to desktop app
+          window.location.href = `${redirectUri}?token=${token}`
+        } else {
+          // Inactive user → redirect to activation page, passing redirect for after activation
+          window.location.href = `/client-activation?redirect=${encodeURIComponent(redirectUri)}`
+        }
+      } else {
+        router.push('/')
+      }
+    } catch (err) {
+      setError(err.message)
       setLoading(false)
-      return
-    }
-
-    if (redirectUri) {
-      const { data: sessionData } = await supabase.auth.getSession()
-      const token = sessionData.session?.access_token
-      window.location.href = `${redirectUri}?token=${token}`
-    } else {
-      router.push('/') // Regular users go to home, not admin dashboard
     }
   }
 
@@ -95,3 +120,4 @@ export default function ClientLoginPage() {
     </Suspense>
   )
 }
+
