@@ -8,57 +8,53 @@ import Link from 'next/link'
 function ClientLoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectUri = searchParams.get('redirect')
+  const redirectUri = searchParams.get('redirect') || 'myapp://callback'
 
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
 
-  const handleLogin = async (event) => {
+  const handleMagicLink = async (event) => {
     event.preventDefault()
+    setError('')
+    setMessage('')
+    setLoading(true)
+
+    try {
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          // 🔥 PKCE FLOW: Supabase handles the code exchange
+          // redirectTo must be your app's deep link
+          emailRedirectTo: redirectUri,
+        }
+      })
+
+      if (otpError) throw otpError
+
+      setMessage('Check your email for the login link!')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleOAuth = async (provider) => {
     setError('')
     setLoading(true)
 
     try {
-      const { data, error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: redirectUri,
+          skipBrowserRedirect: false,
+        }
       })
 
-      if (loginError) {
-        setError(loginError.message)
-        setLoading(false)
-        return
-      }
-
-      const token = data.session?.access_token
-      const userId = data.user?.id
-
-      // ✅ FIX: Check is_active from profiles before redirecting to desktop
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_active')
-        .eq('id', userId)
-        .single()
-
-      if (profileError) {
-        setError('Could not verify account status. Please try again.')
-        setLoading(false)
-        return
-      }
-
-      if (redirectUri) {
-        if (profile?.is_active) {
-          // Active user → send directly to desktop app
-          window.location.href = `${redirectUri}?token=${token}`
-        } else {
-          // Inactive user → redirect to activation page, passing redirect for after activation
-          window.location.href = `/client-activation?redirect=${encodeURIComponent(redirectUri)}`
-        }
-      } else {
-        router.push('/')
-      }
+      if (oauthError) throw oauthError
     } catch (err) {
       setError(err.message)
       setLoading(false)
@@ -67,48 +63,67 @@ function ClientLoginForm() {
 
   return (
     <div className="min-h-screen bg-[#f7f7f8] flex items-center justify-center px-4">
-      <form onSubmit={handleLogin} className="w-full max-w-md bg-white p-8 rounded-lg border border-[#d8dee6] shadow-sm">
+      <div className="w-full max-w-md bg-white p-8 rounded-lg border border-[#d8dee6] shadow-sm">
         <h1 className="text-2xl font-bold mb-2">Client Sign in</h1>
-        <p className="text-sm text-gray-600 mb-6">Connect your desktop automation session.</p>
+        <p className="text-sm text-gray-600 mb-6">Connect your desktop automation session via secure PKCE flow.</p>
         
         {error && (
           <div className="mb-4 rounded-md border border-[#f2b8b5] bg-[#fff4f2] px-4 py-3 text-sm text-[#b42318]">
             {error}
           </div>
         )}
+
+        {message && (
+          <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            {message}
+          </div>
+        )}
         
-        <label className="mb-2 block text-sm font-medium" htmlFor="email">Email</label>
-        <input 
-          id="email"
-          type="email" 
-          autoComplete="email"
-          className="w-full mb-4 rounded-md border border-[#cfd6df] px-3 py-2 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#99f6e4]"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required 
-        />
-        
-        <label className="mb-2 block text-sm font-medium" htmlFor="password">Password</label>
-        <input 
-          id="password"
-          type="password" 
-          autoComplete="current-password"
-          className="w-full mb-6 rounded-md border border-[#cfd6df] px-3 py-2 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#99f6e4]"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required 
-        />
-        
+        <form onSubmit={handleMagicLink} className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium" htmlFor="email">Email</label>
+            <input 
+              id="email"
+              type="email" 
+              autoComplete="email"
+              className="w-full rounded-md border border-[#cfd6df] px-3 py-2 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#99f6e4]"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required 
+            />
+          </div>
+          
+          <button 
+            type="submit"
+            className="w-full bg-[#0f766e] text-white p-2.5 rounded-md font-semibold hover:bg-[#115e59] disabled:opacity-50 transition-colors"
+            disabled={loading}
+          >
+            {loading ? 'Sending...' : 'Send Magic Link'}
+          </button>
+        </form>
+
+        <div className="my-6 flex items-center before:flex-1 before:border-t before:border-gray-200 after:flex-1 after:border-t after:border-gray-200">
+          <span className="mx-4 text-xs text-gray-400 uppercase">Or continue with</span>
+        </div>
+
         <button 
-          className="w-full bg-[#0f766e] text-white p-2.5 rounded-md font-semibold hover:bg-[#115e59] disabled:opacity-50 transition-colors"
+          onClick={() => handleOAuth('google')}
+          className="w-full flex items-center justify-center gap-2 border border-[#cfd6df] bg-white text-gray-700 p-2.5 rounded-md font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
           disabled={loading}
         >
-          {loading ? 'Connecting...' : 'Sign In'}
+          <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+          </svg>
+          Google
         </button>
+
         <p className="mt-6 text-center text-sm text-[#667085]">
           Need an account? <Link href="/client-register" className="text-[#0f766e] font-bold hover:underline">Register</Link>
         </p>
-      </form>
+      </div>
     </div>
   )
 }

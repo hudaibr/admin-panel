@@ -63,7 +63,7 @@ function ActivationForm() {
 
       // Redirect back to desktop app on success
       if (redirectUri) {
-        window.location.href = `${redirectUri}?token=${session?.access_token}`
+        window.location.href = redirectUri
       } else {
         router.push('/dashboard')
       }

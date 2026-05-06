@@ -62,18 +62,10 @@ function RegisterForm() {
         throw new Error(result.error || 'Registration failed')
       }
 
-      // Sign in automatically after registration
-      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password
-      })
-
-      if (loginError) throw new Error(loginError.message)
-
-      // ✅ FIX: Always redirect to activation page after registration.
-      // Never send token directly to desktop — new accounts are always inactive.
-      if (redirectUri && loginData?.session) {
-        window.location.href = `/client-activation?redirect=${encodeURIComponent(redirectUri)}`
+      // ✅ FIX: No more automatic sign-in with password.
+      // Redirect to login page to use Magic Link/PKCE flow.
+      if (redirectUri) {
+        setSuccess(true)
         return
       }
 
